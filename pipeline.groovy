@@ -32,15 +32,15 @@ pipeline {
         stage('Step 2: Paste Sonar Project Token') {
             steps {
                 script {
-                    // Ask user for Sonar Project Token securely
-                    def userInput = input(
+                    def sonarTokenInput = input(
                         id: 'secondInput',
                         message: 'Paste the SonarCloud project token',
                         parameters: [
                             password(name: 'SONAR_PROJECT_TOKEN', description: 'Enter Sonar project token from SonarCloud')
                         ]
                     )
-                    env.SONAR_PROJECT_TOKEN = userInput['SONAR_PROJECT_TOKEN']
+
+                    env.SONAR_PROJECT_TOKEN = sonarTokenInput.toString()
                 }
 
                 sh """
