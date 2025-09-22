@@ -32,6 +32,7 @@ pipeline {
         stage('Step 2: Paste Sonar Project Token') {
             steps {
                 script {
+                    // Ask user for Sonar Project Token securely
                     def userInput = input(
                         id: 'secondInput',
                         message: 'Paste the SonarCloud project token',
@@ -44,7 +45,10 @@ pipeline {
 
                 sh """
                     . venvrepo/bin/activate
-                    python githubRepoSetup.py --repo-name "$REPO_NAME" --sonar-token "$SONAR_PROJECT_TOKEN" --phase finalize
+                    python githubRepoSetup.py \
+                        --repo-name "$REPO_NAME" \
+                        --sonar-token "$SONAR_PROJECT_TOKEN" \
+                        --phase finalize
                 """
             }
         }
