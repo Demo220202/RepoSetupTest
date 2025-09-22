@@ -5,16 +5,17 @@ import requests
 from git import Repo
 from dotenv import load_dotenv
 import json
+import argparse
 
-load_dotenv()
+# load_dotenv()
 
 # ======== CONFIG ========
 GITHUB_ORG = "Zenarate"
 SONAR_ORG = "zenarate"
 SONAR_HOST = "https://sonarcloud.io"
-SONAR_API_TOKEN = os.environ.get("SONAR_API_TOKEN")  # Admin token to use SonarQube API
+SONAR_API_TOKEN = os.getenv("SONAR_API_TOKEN")  # Admin token to use SonarQube API
 # SONAR_PROJECT_TOKEN = os.environ.get("SONAR_PROJECT_TOKEN")  # To set in GitHub Secrets
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")  # Required for GitHub CLI
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")  # Required for GitHub CLI
 
 # print(SONAR_API_TOKEN)
 # print(GITHUB_TOKEN)
@@ -105,12 +106,12 @@ def copy_templates_and_customize(repo_path, repo_name):
         f.write(content)
 
 
-def commit_and_push(repo):
+def commit_and_push(repo, start_branch):
     print("🚀 Committing and pushing changes...")
     repo.git.add(A=True)
     repo.index.commit("Add SonarQube config and workflows")
     origin = repo.remote(name='origin')
-    origin.push(refspec='dev')
+    origin.push(refspec=start_branch)
 
 
 def create_pull_request(repo_name, base_branch, head_branch):
@@ -183,45 +184,33 @@ def get_team_id(org, team_slug):
 
 
 def main():
-    repo_name = input("Enter the new repo name: ").strip()
-    #
-    if not SONAR_API_TOKEN or not GITHUB_TOKEN:
-        raise EnvironmentError("Please ensure SONAR_API_TOKEN and GITHUB_TOKEN are exported as environment variables.")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo-name", required=True, help="GitHub repository name")
+    parser.add_argument("--sonar-token", help="Sonar project token (only for finalize phase)")
+    parser.add_argument("--phase", choices=["create_project", "finalize"], required=True, help="Pipeline execution phase")
+    args = parser.parse_args()
 
-    # repo_name = "test_8Jan24"
-    # Step 1: Create project in SonarCloud
-    create_sonar_project(repo_name) # Tick mark
+    repo_name = args.repo_name
 
-    # Step 2: Pause - Get SONAR_TOKEN from user
-    print("\n🔗 Now go to SonarCloud > Analyze New Project > Select Repo > GitHub Actions.")
-    print("   During the setup, a SONAR_TOKEN will be generated — copy it.")
-    sonar_project_token = input("🔑 Paste the generated SONAR_TOKEN here: ").strip()
-    # #
-    # # # Step 3: Set secret in GitHub
-    set_github_secret(repo_name, "SONAR_TOKEN", sonar_project_token) # ticket mark with update
-    #
-    # # Continue rest of the flow
-    repo, repo_path = clone_and_prepare_repo(repo_name)
-    print("Repo - ", repo, "Repo Path - ", repo_path)
+    if args.phase == "create_project":
+        create_sonar_project(repo_name)
+        print("\n✅ Sonar project created. Now log into SonarCloud, generate a Sonar Project Token, and continue in Jenkins.")
 
+    elif args.phase == "finalize":
+        if not args.sonar_token:
+            raise ValueError("Sonar token required for finalize phase")
+        set_github_secret(repo_name, "SONAR_TOKEN", args.sonar_token)
 
-    project_key_for_repo = f"Zenarate_{repo_name}" # Tick mark
-    copy_templates_and_customize(repo_path, project_key_for_repo) # Tick mark
+        start_branch = "dev2"
 
-    repo = Repo(repo_path) # Tick Mark
-    commit_and_push(repo) # Tick Mark
-    create_pull_request(repo_name, "qa", "dev") # Tick mark
-    # create_pull_request(repo_name, "main", "qa")
-    #
-    # create_branch_protection(repo_name, "qa", ["devops", "leads"])
+        repo, repo_path = clone_and_prepare_repo(repo_name)
+        project_key_for_repo = f"Zenarate_{repo_name}"
+        copy_templates_and_customize(repo_path, project_key_for_repo)
 
-    # To be added
-    # create_branch_protection(repo_name, "hotfixes", ["devops", "leads"])
-    # create_branch_protection(repo_name, "beta", ["devops"])
-    # create_branch_protection(repo_name, "master", ["devops"])
-
-    #
-    print("\n🎉 Setup complete! Review and merge the PR to activate SonarQube analysis.")
+        repo = Repo(repo_path)
+        commit_and_push(repo, start_branch)
+        create_pull_request(repo_name, "qa2", start_branch)
+        print("\n🎉 Setup complete! Review and merge the PR to activate SonarQube analysis.")
 
 
 
