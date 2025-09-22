@@ -1,0 +1,40 @@
+name: Manual Tag On Commit ID
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name'
+        required: true
+      commit_id:
+        description: 'Commit ID'
+        required: false
+      pat_token:
+        description: 'Personal Access Token'
+        required: true
+
+jobs:
+  create_tag_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Use provided commit ID
+        if: ${{ inputs.commit_id }}
+        run: echo "commit_id=${{ inputs.commit_id }}" >> $GITHUB_ENV
+      
+      - name: Show commit ID
+        run: echo "Commit ID:${{ env.commit_id }}"
+      
+      - name: Create a tag
+        id: create_tag
+        uses: comnoco/create-release-action@v2.0.5
+        with:
+          tag_name: ${{ inputs.tag_name }}
+          commitish: ${{ env.commit_id }}
+          body: |
+            This is an automated release tag created from commit ${{ env.commit_id }}.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ inputs.pat_token }}

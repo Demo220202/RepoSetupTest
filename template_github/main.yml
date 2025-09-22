@@ -1,0 +1,74 @@
+name: Pull Request Automation
+ 
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master*
+      - beta*
+      - qa*
+ 
+jobs:
+  if_merged:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: '0'
+
+      - name: Check if from Beta to Master
+        env: 
+          originalString: ${{ github.event.pull_request.title }}
+        if: ${{ github.event.pull_request.base.ref == 'master' && github.event.pull_request.head.ref == 'beta' }}
+        run: |
+          trimmedString=$(echo -n "$originalString" | awk '{$1=$1;print}')
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "$trimmedString" -m "${{ github.event.pull_request.body }}"
+          git push origin "$trimmedString"
+ 
+      - name: Check if from hotfixes to Master
+        env: 
+          originalString: ${{ github.event.pull_request.title }}
+        if: ${{ github.event.pull_request.base.ref == 'master' && github.event.pull_request.head.ref == 'hotfixes' }}
+        run: |
+          trimmedString=$(echo -n "$originalString" | awk '{$1=$1;print}')
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "$trimmedString" -m "${{ github.event.pull_request.body }}"
+          git push origin "$trimmedString"
+          
+      - name: Check if from QA to Beta
+        env: 
+          originalString: ${{ github.event.pull_request.title }}
+        if: ${{ github.event.pull_request.base.ref == 'beta' && github.event.pull_request.head.ref == 'qa' }}
+        run: |  
+           trimmedString=$(echo -n "$originalString" | awk '{$1=$1;print}')
+           git config --local user.email "action@github.com"
+           git config --local user.name "GitHub Action"
+           git tag -a "$trimmedString" -m "${{ github.event.pull_request.body }}"
+           git push origin "$trimmedString"
+        
+      - name: Check if from QA2 to Beta
+        env: 
+          originalString: ${{ github.event.pull_request.title }}
+        if: ${{ github.event.pull_request.base.ref == 'beta' && github.event.pull_request.head.ref == 'qa2' }}
+        run: |  
+           trimmedString=$(echo -n "$originalString" | awk '{$1=$1;print}')
+           git config --local user.email "action@github.com"
+           git config --local user.name "GitHub Action"
+           git tag -a "$trimmedString" -m "${{ github.event.pull_request.body }}"
+           git push origin "$trimmedString"
+      
+      - name: Check if from hotfixes to Beta
+        env: 
+          originalString: ${{ github.event.pull_request.title }}
+        if: ${{ github.event.pull_request.base.ref == 'beta' && github.event.pull_request.head.ref == 'hotfixes' }}
+        run: |
+          trimmedString=$(echo -n "$originalString" | awk '{$1=$1;print}')
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "$trimmedString" -m "${{ github.event.pull_request.body }}"
+          git push origin "$trimmedString"
