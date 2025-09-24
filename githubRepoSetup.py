@@ -67,7 +67,7 @@ def set_github_secret(repo_name, secret_name, secret_value):
     ], check=True)
 
 
-def clone_and_prepare_repo(repo_name):
+def clone_and_prepare_repo(repo_name, start_branch):
     repo_url = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_ORG}/{repo_name}.git"
     repo_path = os.path.join(LOCAL_CLONE_PATH, repo_name)
     print(f"📥 Cloning repo to: {repo_path}")
@@ -77,7 +77,7 @@ def clone_and_prepare_repo(repo_name):
     Repo.clone_from(repo_url, repo_path)
 
     repo = Repo(repo_path)
-    repo.git.checkout('-b', 'dev')
+    repo.git.checkout('-b', start_branch)
 
     return repo, repo_path
 
@@ -203,7 +203,7 @@ def main():
 
         start_branch = "dev2"
 
-        repo, repo_path = clone_and_prepare_repo(repo_name)
+        repo, repo_path = clone_and_prepare_repo(repo_name, start_branch)
         project_key_for_repo = f"Zenarate_{repo_name}"
         copy_templates_and_customize(repo_path, project_key_for_repo)
 
