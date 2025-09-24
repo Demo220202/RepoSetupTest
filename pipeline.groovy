@@ -4,11 +4,12 @@ pipeline {
     environment {
         SONAR_API_TOKEN = credentials('sonar-api-token')
         GITHUB_TOKEN    = credentials('github-token')
+        PATH = "/opt/homebrew/bin:/usr/local/bin:${env.PATH}"
     }
 
     stages {
 
-        stage('Check GitHub CLI') {
+        stage('Check gh') {
             steps {
                 sh '''
                     echo "PATH is: $PATH"
