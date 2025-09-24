@@ -7,6 +7,40 @@ pipeline {
     }
 
     stages {
+
+        stage('Check GitHub CLI') {
+            steps {
+                sh '''
+                    echo "PATH is: $PATH"
+                    which gh || echo "gh not found"
+                    gh --version || echo "gh command failed"
+                '''
+            }
+        }
+
+        stage('Install GitHub CLI if missing') {
+            steps {
+                sh '''
+                    if ! command -v gh >/dev/null 2>&1; then
+                        echo "Installing GitHub CLI..."
+                        if [[ "$OSTYPE" == "darwin"* ]]; then
+                            brew install gh
+                        else
+                            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+                                sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+                            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+                            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+                                sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+                            sudo apt update
+                            sudo apt install -y gh
+                        fi
+                    else
+                        echo "GitHub CLI already installed at $(which gh)"
+                    fi
+                '''
+            }
+        }
+
         stage('Step 1: Repo Name & Create Sonar Project') {
             steps {
 //                 script {
