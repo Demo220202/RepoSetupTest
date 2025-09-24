@@ -183,6 +183,30 @@ def get_team_id(org, team_slug):
         return None
 
 
+def project_exists(project_key):
+    """Check if a SonarCloud project already exists."""
+    resp = requests.get(
+        f"{SONAR_HOST}/api/projects/search",
+        params={"projects": project_key},
+        auth=(os.environ["SONAR_API_TOKEN"], "")
+    )
+    if resp.status_code != 200:
+        raise Exception(f"Failed to check project existence: {resp.text}")
+    data = resp.json()
+    return data.get("paging", {}).get("total", 0) > 0
+
+def create_sonar_project_if_missing(repo_name):
+    """Only create the project if it doesn't already exist."""
+    project_key = f"Zenarate_{repo_name}"
+    if project_exists(project_key):
+        print(f"⚡ Project {project_key} already exists in SonarCloud. Skipping creation.")
+        return False
+    else:
+        create_sonar_project(repo_name)  # your existing function
+        print(f"✅ Created new Sonar project {project_key}")
+        return True
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-name", required=True, help="GitHub repository name")
@@ -193,8 +217,13 @@ def main():
     repo_name = args.repo_name
 
     if args.phase == "create_project":
-        create_sonar_project(repo_name)
-        print("\n✅ Sonar project created. Now log into SonarCloud, generate a Sonar Project Token, and continue in Jenkins.")
+        created = create_sonar_project_if_missing(repo_name)
+        if created:
+            print(
+                "\n✅ Sonar project created. Now log into SonarCloud, generate a Sonar Project Token, and continue in Jenkins.")
+        else:
+            print("\n⚡ Skipped creation since project already exists. Proceed to generate/reuse the token in Jenkins.")
+
 
     elif args.phase == "finalize":
         if not args.sonar_token:
