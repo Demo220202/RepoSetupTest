@@ -24,7 +24,15 @@ pipeline {
                     if ! command -v gh >/dev/null 2>&1; then
                         echo "Installing GitHub CLI..."
                         if [[ "$OSTYPE" == "darwin"* ]]; then
-                            brew install gh
+                            # Detect Homebrew path
+                            if [ -x "/opt/homebrew/bin/brew" ]; then
+                                /opt/homebrew/bin/brew install gh
+                            elif [ -x "/usr/local/bin/brew" ]; then
+                                /usr/local/bin/brew install gh
+                            else
+                                echo "Homebrew not found. Please install Homebrew first."
+                                exit 1
+                            fi
                         else
                             curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
                                 sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
