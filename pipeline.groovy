@@ -90,7 +90,6 @@ pipeline {
                     . venvrepo/bin/activate
                     python githubRepoSetup.py \
                         --repo-name "$REPO_NAME" \
-                        --sonar-token "$SONAR_PROJECT_TOKEN" \
                         --phase finalize
                 """
             }

@@ -210,7 +210,7 @@ def create_sonar_project_if_missing(repo_name):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-name", required=True, help="GitHub repository name")
-    parser.add_argument("--sonar-token", help="Sonar project token (only for finalize phase)")
+    # parser.add_argument("--sonar-token", help="Sonar project token (only for finalize phase)")
     parser.add_argument("--phase", choices=["create_project", "finalize"], required=True, help="Pipeline execution phase")
     args = parser.parse_args()
 
@@ -226,9 +226,12 @@ def main():
 
 
     elif args.phase == "finalize":
-        if not args.sonar_token:
+
+        sonar_token = os.getenv("SONAR_API_TOKEN")
+
+        if not sonar_token:
             raise ValueError("Sonar token required for finalize phase")
-        set_github_secret(repo_name, "SONAR_TOKEN", args.sonar_token)
+        set_github_secret(repo_name, "SONAR_TOKEN", sonar_token)
 
         start_branch = "dev2"
 
