@@ -262,7 +262,7 @@ def main():
 
     repo_name = args.repo_name
 
-    ensure_branches_exist(repo_name, ["qa", "qa2", "hotfixes", "beta", "perf", "master"])
+    ensure_branches_exist(repo_name, ["qa3" ,"qa", "qa2", "hotfixes", "beta", "perf", "master"])
 
     if args.phase == "create_project":
         created = create_sonar_project_if_missing(repo_name)
