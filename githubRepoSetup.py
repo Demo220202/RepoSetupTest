@@ -25,6 +25,52 @@ LOCAL_CLONE_PATH = "temp_repo"  # Temporary working directory
 # ========================
 
 
+def ensure_branches_exist(repo_name, branches):
+    """Ensure required branches exist in the repo, skip if already present."""
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}/branches"
+    resp = requests.get(url, headers=headers)
+    if resp.status_code != 200:
+        raise Exception(f"❌ Failed to fetch branches: {resp.text}")
+
+    existing_branches = [b["name"] for b in resp.json()]
+
+    # Get default branch (usually main or master)
+    repo_url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}"
+    repo_resp = requests.get(repo_url, headers=headers)
+    if repo_resp.status_code != 200:
+        raise Exception(f"❌ Failed to fetch repo info: {repo_resp.text}")
+    default_branch = repo_resp.json()["default_branch"]
+
+    # Get default branch commit SHA
+    sha_url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}/git/ref/heads/{default_branch}"
+    sha_resp = requests.get(sha_url, headers=headers)
+    if sha_resp.status_code != 200:
+        raise Exception(f"❌ Failed to fetch default branch SHA: {sha_resp.text}")
+    default_sha = sha_resp.json()["object"]["sha"]
+
+    for branch in branches:
+        if branch in existing_branches:
+            print(f"⚡ Branch '{branch}' already exists. Skipping.")
+            continue
+
+        create_url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}/git/refs"
+        data = {
+            "ref": f"refs/heads/{branch}",
+            "sha": default_sha
+        }
+        create_resp = requests.post(create_url, headers=headers, data=json.dumps(data))
+        if create_resp.status_code == 201:
+            print(f"✅ Created branch: {branch}")
+        else:
+            print(f"❌ Failed to create branch '{branch}': {create_resp.text}")
+
+
+
 def create_sonar_project(repo_name):
     print(f"🔧 Creating project in SonarQube: {repo_name}")
     url = f"{SONAR_HOST}/api/projects/create"
@@ -215,6 +261,8 @@ def main():
     args = parser.parse_args()
 
     repo_name = args.repo_name
+
+    ensure_branches_exist(repo_name, ["qa", "qa2", "hotfixes", "beta", "perf", "master"])
 
     if args.phase == "create_project":
         created = create_sonar_project_if_missing(repo_name)
