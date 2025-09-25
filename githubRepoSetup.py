@@ -187,7 +187,7 @@ def project_exists(project_key):
     """Check if a SonarCloud project already exists."""
     resp = requests.get(
         f"{SONAR_HOST}/api/projects/search",
-        params={"projects": project_key},
+        params={"projects": project_key, "organization": SONAR_ORG},
         auth=(os.environ["SONAR_API_TOKEN"], "")
     )
     if resp.status_code != 200:
