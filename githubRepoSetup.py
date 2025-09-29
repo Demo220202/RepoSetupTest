@@ -25,6 +25,23 @@ LOCAL_CLONE_PATH = "temp_repo"  # Temporary working directory
 # ========================
 
 
+def add_team_to_repo(repo_name, team_slug, permission="push"):
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    url = f"https://api.github.com/orgs/{GITHUB_ORG}/teams/{team_slug}/repos/{GITHUB_ORG}/{repo_name}"
+
+    data = {"permission": permission}  # "pull", "push", or "admin"
+
+    response = requests.put(url, headers=headers, data=json.dumps(data))
+    print(f"Adding team {team_slug} to repo {repo_name}:")
+    print("Status Code:", response.status_code)
+    print("Response:", response.json() if response.content else "No content")
+
+
+
 def ensure_branches_exist(repo_name, branches):
     """Ensure required branches exist in the repo, skip if already present."""
     headers = {
@@ -264,6 +281,9 @@ def main():
 
     ensure_branches_exist(repo_name, ["qa3" ,"qa", "qa2", "hotfixes", "beta", "perf", "master"])
 
+    add_team_to_repo(repo_name, "devops", permission="push")
+    add_team_to_repo(repo_name, "leads", permission="push")
+
     if args.phase == "create_project":
         created = create_sonar_project_if_missing(repo_name)
         if created:
@@ -290,6 +310,12 @@ def main():
         repo = Repo(repo_path)
         commit_and_push(repo, start_branch)
         create_pull_request(repo_name, "qa2", start_branch)
+
+        create_branch_protection(repo_name, "hotfixes", ["devops", "leads"])
+        create_branch_protection(repo_name, "qa", ["devops", "leads"])
+        create_branch_protection(repo_name, "beta", ["devops"])
+        create_branch_protection(repo_name, "master", ["devops"])
+
         print("\n🎉 Setup complete! Review and merge the PR to activate SonarQube analysis.")
 
 
