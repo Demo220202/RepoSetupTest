@@ -269,6 +269,18 @@ def create_sonar_project_if_missing(repo_name):
         print(f"✅ Created new Sonar project {project_key}")
         return True
 
+def verify_branch(repo_name, branch):
+    url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}/branches/{branch}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    resp = requests.get(url, headers=headers)
+    if resp.status_code == 200:
+        print(f"✅ Branch {branch} is real and ready for protection")
+        return True
+    else:
+        print(f"❌ Branch {branch} not found ({resp.status_code}): {resp.text}")
+        return False
+
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -311,10 +323,17 @@ def main():
         commit_and_push(repo, start_branch)
         create_pull_request(repo_name, "qa2", start_branch)
 
-        create_branch_protection(repo_name, "hotfixes", ["devops", "leads"])
-        create_branch_protection(repo_name, "qa", ["devops", "leads"])
-        create_branch_protection(repo_name, "beta", ["devops"])
-        create_branch_protection(repo_name, "master", ["devops"])
+        if verify_branch(repo_name, "hotfixes"):
+            create_branch_protection(repo_name, "hotfixes", ["devops", "leads"])
+
+        if verify_branch(repo_name, "qa"):
+            create_branch_protection(repo_name, "qa", ["devops", "leads"])
+
+        if verify_branch(repo_name, "beta"):
+            create_branch_protection(repo_name, "beta", ["devops"])
+
+        if verify_branch(repo_name, "master"):
+            create_branch_protection(repo_name, "master", ["devops"])
 
         print("\n🎉 Setup complete! Review and merge the PR to activate SonarQube analysis.")
 
