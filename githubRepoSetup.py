@@ -293,7 +293,7 @@ def main():
 
     ensure_branches_exist(repo_name, ["qa3" ,"qa", "qa2", "hotfixes", "beta", "perf", "master"])
 
-    add_team_to_repo(repo_name, "devops", permission="push")
+    add_team_to_repo(repo_name, "devops", permission="admin")
     add_team_to_repo(repo_name, "leads", permission="push")
 
     if args.phase == "create_project":
