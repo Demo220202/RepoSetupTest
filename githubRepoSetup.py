@@ -306,7 +306,7 @@ def create_branch_protection(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
     print("Response:", response.json())
 
 
-def get_team_id(org, team_slug):
+def get_team_id_with_org(org, team_slug):
     url = f"https://api.github.com/orgs/{org}/teams/{team_slug}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
