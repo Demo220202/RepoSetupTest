@@ -198,21 +198,45 @@ def set_branch_protection(repo_name, branch):
     ], check=True)
 
 
+def get_team_id(team_slug):
+    url = f"https://api.github.com/orgs/{GITHUB_ORG}/teams/{team_slug}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()["id"]
+    else:
+        print(f"Failed to get team ID for {team_slug}: {response.json()}")
+        return None
+
 def create_branch_protection_ruleset(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github+json"  # rulesets API requires this
+        "Accept": "application/vnd.github+json"
     }
 
     url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}/rulesets"
 
+    # Convert slugs to IDs
+    bypass_actors = []
+    for slug in TEAM_SLUGS:
+        team_id = get_team_id(slug)
+        if team_id:
+            bypass_actors.append({
+                "actor_type": "Team",
+                "actor_id": team_id,
+                "bypass_mode": "always"
+            })
+
     data = {
         "name": f"Branch protection for {BRANCH_PATTERN}",
-        "target": "branch",   # could also be "tag"
+        "target": "branch",
         "enforcement": "active",
         "conditions": {
             "ref_name": {
-                "include": [BRANCH_PATTERN],  # <-- here you can use "qa*" or "release/**"
+                "include": [BRANCH_PATTERN],  # supports qa*, release/**
                 "exclude": []
             }
         },
@@ -223,7 +247,9 @@ def create_branch_protection_ruleset(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
                     "required_approving_review_count": 1,
                     "dismiss_stale_reviews_on_push": False,
                     "require_code_owner_review": False,
-                    "require_last_push_approval": False
+                    "require_last_push_approval": False,
+                    "block_creations": True,
+                    "require_conversation_resolution": True
                 }
             },
             {
@@ -235,18 +261,15 @@ def create_branch_protection_ruleset(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
                 "parameters": {}
             }
         ],
-        "bypass_actors": [
-            {
-                "actor_type": "Team",
-                "actor_id": TEAM_SLUGS,  # Needs numeric team IDs, not slugs
-                "bypass_mode": "always"
-            }
-        ]
+        "bypass_actors": bypass_actors
     }
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
     print("Status Code:", response.status_code)
-    print("Response:", response.json())
+    try:
+        print("Response:", response.json())
+    except:
+        print("Raw Response:", response.text)
 
 
 def create_branch_protection(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
