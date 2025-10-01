@@ -399,7 +399,7 @@ def main():
             create_branch_protection(repo_name, "hotfixes", ["devops", "leads"])
 
         if verify_branch(repo_name, "qa"):
-            create_branch_protection_ruleset(repo_name, "qa*", ["devops", "leads"])
+            create_branch_protection(repo_name, "qa", ["devops", "leads"])
 
         if verify_branch(repo_name, "beta"):
             create_branch_protection(repo_name, "beta", ["devops"])
