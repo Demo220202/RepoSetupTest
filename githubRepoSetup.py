@@ -236,7 +236,7 @@ def create_branch_protection_ruleset(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
         "enforcement": "active",
         "conditions": {
             "ref_name": {
-                "include": [BRANCH_PATTERN],
+                "include": [f"refs/heads/{BRANCH_PATTERN}"],
                 "exclude": []
             }
         },
