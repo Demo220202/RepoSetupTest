@@ -236,7 +236,7 @@ def create_branch_protection_ruleset(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
         "enforcement": "active",
         "conditions": {
             "ref_name": {
-                "include": [BRANCH_PATTERN],  # supports qa*, release/**
+                "include": [BRANCH_PATTERN],
                 "exclude": []
             }
         },
@@ -248,18 +248,16 @@ def create_branch_protection_ruleset(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
                     "dismiss_stale_reviews_on_push": False,
                     "require_code_owner_review": False,
                     "require_last_push_approval": False,
-                    "block_creations": True,
-                    "require_conversation_resolution": True
+                    "required_review_thread_resolution": False
                 }
             },
             {
-                "type": "deletion",
-                "parameters": {}
+                "type": "deletion"
             },
             {
-                "type": "non_fast_forward",
-                "parameters": {}
+                "type": "non_fast_forward"
             }
+            # (optionally: a required_status_checks rule)
         ],
         "bypass_actors": bypass_actors
     }
