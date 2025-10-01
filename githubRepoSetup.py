@@ -198,6 +198,57 @@ def set_branch_protection(repo_name, branch):
     ], check=True)
 
 
+def create_branch_protection_ruleset(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json"  # rulesets API requires this
+    }
+
+    url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}/rulesets"
+
+    data = {
+        "name": f"Branch protection for {BRANCH_PATTERN}",
+        "target": "branch",   # could also be "tag"
+        "enforcement": "active",
+        "conditions": {
+            "ref_name": {
+                "include": [BRANCH_PATTERN],  # <-- here you can use "qa*" or "release/**"
+                "exclude": []
+            }
+        },
+        "rules": [
+            {
+                "type": "pull_request",
+                "parameters": {
+                    "required_approving_review_count": 1,
+                    "dismiss_stale_reviews_on_push": False,
+                    "require_code_owner_review": False,
+                    "require_last_push_approval": False
+                }
+            },
+            {
+                "type": "deletion",
+                "parameters": {}
+            },
+            {
+                "type": "non_fast_forward",
+                "parameters": {}
+            }
+        ],
+        "bypass_actors": [
+            {
+                "actor_type": "Team",
+                "actor_id": TEAM_SLUGS,  # Needs numeric team IDs, not slugs
+                "bypass_mode": "always"
+            }
+        ]
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    print("Status Code:", response.status_code)
+    print("Response:", response.json())
+
+
 def create_branch_protection(repo_name, BRANCH_PATTERN, TEAM_SLUGS):
 
     headers = {
@@ -327,7 +378,7 @@ def main():
             create_branch_protection(repo_name, "hotfixes", ["devops", "leads"])
 
         if verify_branch(repo_name, "qa"):
-            create_branch_protection(repo_name, "qa", ["devops", "leads"])
+            create_branch_protection_ruleset(repo_name, "qa*", ["devops", "leads"])
 
         if verify_branch(repo_name, "beta"):
             create_branch_protection(repo_name, "beta", ["devops"])
