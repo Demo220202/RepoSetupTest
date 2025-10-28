@@ -358,7 +358,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-name", required=True, help="GitHub repository name")
     # parser.add_argument("--sonar-token", help="Sonar project token (only for finalize phase)")
-    parser.add_argument("--phase", choices=["create_project", "finalize"], required=True, help="Pipeline execution phase")
+    parser.add_argument("--phase", choices=["create_project", "finalize", "finalize_branch_protection"], required=True, help="Pipeline execution phase")
     args = parser.parse_args()
 
     repo_name = args.repo_name
