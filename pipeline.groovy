@@ -50,8 +50,8 @@ pipeline {
             }
         }
 
-        stage('Step 1: Repo Name & Create Sonar Project') {
-            steps {
+//         stage('Step 1: Repo Name & Create Sonar Project') {
+//             steps {
 //                 script {
 //                     def userInput = input(
 //                         id: 'firstInput',
@@ -62,38 +62,38 @@ pipeline {
 //                     )
 //                     env.REPO_NAME = userInput['REPO_NAME']
 //                 }
+//
+//                 sh """
+//                     python3 -m venv venvrepo
+//                     . venvrepo/bin/activate
+//                     pip install -r requirements.txt
+//                     python githubRepoSetup.py --repo-name "$REPO_NAME" --phase create_project
+//                 """
+//             }
+//         }
 
-                sh """
-                    python3 -m venv venvrepo
-                    . venvrepo/bin/activate
-                    pip install -r requirements.txt
-                    python githubRepoSetup.py --repo-name "$REPO_NAME" --phase create_project
-                """
-            }
-        }
-
-        stage('Step 2: Paste Sonar Project Token') {
-            steps {
-                script {
-                    def sonarTokenInput = input(
-                        id: 'secondInput',
-                        message: 'Paste the SonarCloud project token',
-                        parameters: [
-                            password(name: 'SONAR_PROJECT_TOKEN', description: 'Enter Sonar project token from SonarCloud')
-                        ]
-                    )
-
-                    env.SONAR_PROJECT_TOKEN = sonarTokenInput.toString()
-                }
-
-                sh """
-                    . venvrepo/bin/activate
-                    python githubRepoSetup.py \
-                        --repo-name "$REPO_NAME" \
-                        --phase finalize
-                """
-            }
-        }
+//         stage('Step 2: Paste Sonar Project Token') {
+//             steps {
+//                 script {
+//                     def sonarTokenInput = input(
+//                         id: 'secondInput',
+//                         message: 'Paste the SonarCloud project token',
+//                         parameters: [
+//                             password(name: 'SONAR_PROJECT_TOKEN', description: 'Enter Sonar project token from SonarCloud')
+//                         ]
+//                     )
+//
+//                     env.SONAR_PROJECT_TOKEN = sonarTokenInput.toString()
+//                 }
+//
+//                 sh """
+//                     . venvrepo/bin/activate
+//                     python githubRepoSetup.py \
+//                         --repo-name "$REPO_NAME" \
+//                         --phase finalize
+//                 """
+//             }
+//         }
 
         stage('Step 3: Approval for Branch Protection') {
             steps {
