@@ -395,6 +395,8 @@ def main():
         commit_and_push(repo, start_branch)
         create_pull_request(repo_name, "qa2", start_branch)
 
+    elif args.phase == "finalize_branch_protection":
+
         if verify_branch(repo_name, "hotfixes"):
             create_branch_protection(repo_name, "hotfixes", ["devops", "leads"])
 

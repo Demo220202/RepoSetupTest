@@ -94,5 +94,32 @@ pipeline {
                 """
             }
         }
+
+        stage('Step 3: Approval for Branch Protection') {
+            steps {
+                script {
+                    // Only waits for human approval
+                    def approval = input(
+                        id: 'approvalInput',
+                        message: 'Do you want to proceed with branch protection setup?',
+                        parameters: [
+                            choice(name: 'PROCEED', choices: ['Yes', 'No'], description: 'Select Yes to continue')
+                        ]
+                    )
+
+                    if (approval == 'No') {
+                        error "Branch protection setup aborted by user."
+                    }
+                }
+
+                sh """
+                    . venvrepo/bin/activate
+                    python githubRepoSetup.py \
+                        --repo-name "$REPO_NAME" \
+                        --phase finalize_branch_protection
+                """
+            }
+        }
+
     }
 }
