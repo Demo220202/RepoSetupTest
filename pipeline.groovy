@@ -52,7 +52,9 @@ pipeline {
 
         stage('Step 1: Repo Name & Create Sonar Project') {
             steps {
-                def userGitHubToken = input(
+                script {
+
+                    def userGitHubToken = input(
                         id: 'firstInput',
                         message: 'Paste the user GitHub token',
                         parameters: [
@@ -61,6 +63,8 @@ pipeline {
                     )
 
                     env.GITHUB_TOKEN = userGitHubToken.toString()
+
+                }
 
                 sh """
                     python3 -m venv venvrepo
