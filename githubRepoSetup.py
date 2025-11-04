@@ -40,6 +40,46 @@ def add_team_to_repo(repo_name, team_slug, permission="push"):
     print("Status Code:", response.status_code)
     print("Response:", response.json() if response.content else "No content")
 
+def add_user_to_repo(repo_name, username, permission="pull"):
+    """
+    Adds a user (collaborator) to a GitHub repository with the specified permission.
+
+    permission can be one of:
+    - 'pull' (read-only)
+    - 'push' (read/write)
+    - 'admin' (full access)
+    - 'maintain' (manage repo without admin)
+    - 'triage' (manage issues and PRs)
+    """
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    check_url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}/collaborators/{username}"
+    check_response = requests.get(check_url, headers=headers)
+
+    if check_response.status_code == 204:
+        print(f"User '{username}' already has access to repo '{repo_name}'. Skipping addition.")
+        return
+    elif check_response.status_code == 404:
+        print(f"ℹ User '{username}' does not currently have access. Proceeding to add...")
+    else:
+        print(f"! Unexpected response while checking access ({check_response.status_code}): {check_response.text}")
+        return
+
+    # 2 Add user to the repo
+    add_url = f"https://api.github.com/repos/{GITHUB_ORG}/{repo_name}/collaborators/{username}"
+    data = {"permission": permission}
+    response = requests.put(add_url, headers=headers, data=json.dumps(data))
+
+    if response.status_code in [201, 204]:
+        print(f"Successfully added '{username}' to '{repo_name}' with '{permission}' permission.")
+    else:
+        print(f"x Failed to add '{username}' to '{repo_name}'.")
+        print("Status Code:", response.status_code)
+        print("Response:", response.json() if response.content else "No content")
+
 
 
 def ensure_branches_exist(repo_name, branches):
@@ -367,6 +407,8 @@ def main():
 
     add_team_to_repo(repo_name, "devops", permission="admin")
     add_team_to_repo(repo_name, "leads", permission="push")
+    add_team_to_repo(repo_name, "all_repo_read_access", permission="pull")
+    add_user_to_repo(repo_name, "z-jenkins", permission="pull")
 
     if args.phase == "create_project":
         created = create_sonar_project_if_missing(repo_name)
@@ -385,7 +427,7 @@ def main():
             raise ValueError("Sonar token required for finalize phase")
         set_github_secret(repo_name, "SONAR_TOKEN", sonar_token)
 
-        start_branch = "dev2"
+        start_branch = "dev"
 
         repo, repo_path = clone_and_prepare_repo(repo_name, start_branch)
         project_key_for_repo = f"Zenarate_{repo_name}"
@@ -393,7 +435,7 @@ def main():
 
         repo = Repo(repo_path)
         commit_and_push(repo, start_branch)
-        create_pull_request(repo_name, "qa2", start_branch)
+        create_pull_request(repo_name, "qa", start_branch)
 
     elif args.phase == "finalize_branch_protection":
 
@@ -402,6 +444,9 @@ def main():
 
         if verify_branch(repo_name, "qa"):
             create_branch_protection(repo_name, "qa", ["devops", "leads"])
+
+        if verify_branch(repo_name, "perf"):
+            create_branch_protection(repo_name, "perf", ["devops", "leads"])
 
         if verify_branch(repo_name, "beta"):
             create_branch_protection(repo_name, "beta", ["devops"])
